@@ -1,7 +1,8 @@
+from django.db import transaction
 from rest_framework import serializers
 from .models import Book, BookCategory
 from categories.models import Category
-from authors.views import  Author
+from authors.models import Author
 from authors.serializers import AuthorSerializer
 from categories.serializers import CategorySerializer
 
@@ -18,7 +19,7 @@ class BookSerializer(serializers.ModelSerializer):
         queryset=Author.objects.all(),
         write_only=True,
     )
-    categories = CategorySerializer(many=True, read_only=True)
+    category_assignments = serializers.SerializerMethodField()
     categories_input = BookCategoryWriteSerializer(
         many=True,
         write_only=True,
@@ -34,23 +35,43 @@ class BookSerializer(serializers.ModelSerializer):
             "published_date",
             "author",
             "author_id",
-            "categories",
+            "category_assignments",
             "categories_input",
         ]
 
+    def get_category_assignments(self, obj):
+        assignments = obj.bookcategory_set.select_related("category")
+        return BookCategorySerializer(assignments, many=True).data
+
+    @transaction.atomic
     def create(self, validated_data):
         categories_payload = validated_data.pop("categories_input", [])
         book = Book.objects.create(**validated_data)
 
         for item in categories_payload:
             category, _ = Category.objects.get_or_create(name=item["name"])
-            BookCategory.objects.create(
+            BookCategory.objects.update_or_create(
                 book=book,
                 category=category,
-                priority=item.get("priority", 1),
+                defaults={"priority": item.get("priority", 1)},
             )
 
         return book
+
+    @transaction.atomic
+    def update(self, instance, validated_data):
+        categories_payload = validated_data.pop("categories_input", None)
+        instance = super().update(instance, validated_data)
+        if categories_payload is not None:
+            instance.bookcategory_set.all().delete()
+            for item in categories_payload:
+                category, _ = Category.objects.get_or_create(name=item["name"])
+                BookCategory.objects.create(
+                    book=instance,
+                    category=category,
+                    priority=item.get("priority", 1),
+                )
+        return instance
     
 
 class BookCategorySerializer(serializers.ModelSerializer):

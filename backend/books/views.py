@@ -17,7 +17,9 @@ from .serializers import BookSerializer, BookCategorySerializer
     destroy=extend_schema(tags=["Books"]),
 )
 class BookViewSet(viewsets.ModelViewSet):
-    queryset = Book.objects.select_related("author").prefetch_related("categories").order_by("id")
+    queryset = Book.objects.select_related("author").prefetch_related(
+        "bookcategory_set__category"
+    ).order_by("id")
     serializer_class = BookSerializer
 
     @action(detail=True, methods=["post"])

@@ -1,10 +1,12 @@
+import os
+
 import requests
 from django.shortcuts import render, redirect
 from django.contrib import messages
 
 from .forms import AuthorCreateForm, BookCreateForm
 
-API_BASE = "http://127.0.0.1:8000/api/v1"
+API_BASE = os.getenv("API_BASE_URL", "http://127.0.0.1:8000/api/v1").rstrip("/")
 
 
 def _extract_api_error(resp: requests.Response) -> str:

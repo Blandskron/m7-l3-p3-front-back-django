@@ -32,7 +32,11 @@ class BookCategory(models.Model):
 
     class Meta:
         db_table = "book_category"
-        unique_together = ("book", "category")
+        constraints = [
+            models.UniqueConstraint(
+                fields=("book", "category"), name="unique_book_category"
+            )
+        ]
 
     def __str__(self):
         return f"{self.book.title} - {self.category.name}"

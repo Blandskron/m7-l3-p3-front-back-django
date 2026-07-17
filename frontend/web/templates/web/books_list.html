@@ -54,13 +54,12 @@
           </div>
         </div>
 
-        {% if b.categories %}
+        {% if b.category_assignments %}
           <hr class="divider" />
           <div style="display:flex; gap:8px; flex-wrap:wrap;">
-            {% for c in b.categories %}
+            {% for assignment in b.category_assignments %}
               <span class="chip">
-                {% if c.name %}{{ c.name }}{% else %}{{ c }}{% endif %}
-                {% if c.priority %} · p{{ c.priority }}{% endif %}
+                {{ assignment.category_name }} · prioridad {{ assignment.priority }}
               </span>
             {% endfor %}
           </div>

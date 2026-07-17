@@ -1,0 +1,32 @@
+services:
+  backend:
+    build: .
+    environment:
+      SERVICE: backend
+      SQLITE_PATH: /data/db.sqlite3
+      DJANGO_SUPERUSER_USERNAME: admin
+      DJANGO_SUPERUSER_EMAIL: admin@example.com
+      DJANGO_SUPERUSER_PASSWORD: admin1234
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    volumes:
+      - library_data:/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/docs/swagger/')"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+  frontend:
+    build: .
+    environment:
+      SERVICE: frontend
+      API_BASE_URL: http://backend:8000/api/v1
+    ports:
+      - "${FRONTEND_PORT:-8001}:8001"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  library_data:
